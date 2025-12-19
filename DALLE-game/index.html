@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<title>DALL·E Snake</title>
+
+<style>
+  body {
+    background: #0b0b0b;
+    color: #eee;
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
+
+  canvas {
+    margin-top: 20px;
+    background: #000;
+    border: 3px solid #666;
+  }
+
+  #info {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #aaa;
+  }
+
+  #videoBox {
+    display: none;
+    margin-top: 20px;
+  }
+</style>
+</head>
+
+<body>
+
+<h2>DALL·E Гра</h2>
+<p>Злови 19 ручок</p>
+
+<canvas id="game" width="400" height="400"></canvas>
+
+<div id="info">
+  W — вперед | S — назад | A — вліво | D — вправо | Enter — перезапуск
+</div>
+
+<div id="videoBox">
+  <h3>🎉 Відео відкрито</h3>
+  <video width="400" controls>
+    <source src="video.mp4" type="video/mp4">
+  </video>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const grid = 20;
+const cells = canvas.width / grid;
+
+let snake, dir, food, score, loop, gameOver;
+
+function resetGame() {
+  snake = [{ x: 10, y: 10 }];
+  dir = { x: 1, y: 0 };
+  food = spawnFood();
+  score = 0;
+  gameOver = false;
+
+  document.getElementById("videoBox").style.display = "none";
+
+  clearInterval(loop);
+  loop = setInterval(update, 120);
+}
+
+function spawnFood() {
+  return {
+    x: Math.floor(Math.random() * cells),
+    y: Math.floor(Math.random() * cells)
+  };
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key === "w" && dir.y !== 1) dir = { x: 0, y: -1 };
+  if (e.key === "s" && dir.y !== -1) dir = { x: 0, y: 1 };
+  if (e.key === "a" && dir.x !== 1) dir = { x: -1, y: 0 };
+  if (e.key === "d" && dir.x !== -1) dir = { x: 1, y: 0 };
+
+  if (e.key === "Enter") resetGame();
+});
+
+function drawGrid() {
+  ctx.strokeStyle = "#222";
+  for (let i = 0; i <= cells; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * grid, 0);
+    ctx.lineTo(i * grid, canvas.height);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(0, i * grid);
+    ctx.lineTo(canvas.width, i * grid);
+    ctx.stroke();
+  }
+}
+
+function update() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawGrid();
+
+  const head = {
+    x: snake[0].x + dir.x,
+    y: snake[0].y + dir.y
+  };
+
+  // зіткнення зі стіною або собою
+  if (
+    head.x < 0 || head.y < 0 ||
+    head.x >= cells || head.y >= cells ||
+    snake.some(p => p.x === head.x && p.y === head.y)
+  ) {
+    clearInterval(loop);
+    gameOver = true;
+    return;
+  }
+
+  snake.unshift(head);
+
+  // зловив ручку
+  if (head.x === food.x && head.y === food.y) {
+    score++;
+    food = spawnFood();
+
+    if (score === 19) {
+      clearInterval(loop);
+      document.getElementById("videoBox").style.display = "block";
+      return;
+    }
+  } else {
+    snake.pop();
+  }
+
+  // ручка
+  ctx.fillStyle = "#ff9933";
+  ctx.fillRect(food.x * grid, food.y * grid, grid, grid);
+
+  // змійка
+  snake.forEach((p, i) => {
+    ctx.fillStyle = i === 0 ? "#00ff99" : "#00cc77";
+    ctx.fillRect(p.x * grid, p.y * grid, grid, grid);
+  });
+}
+
+resetGame();
+</script>
+
+</body>
+</html>
